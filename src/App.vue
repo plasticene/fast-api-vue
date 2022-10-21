@@ -1,17 +1,15 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <data-source></data-source>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+import DataSource from '@/views/metadata/DataSource.vue'
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    DataSource,
   }
 }
 </script>
