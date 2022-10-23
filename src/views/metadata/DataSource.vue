@@ -7,6 +7,14 @@
 <script>
 export default {
     name:"DataSource",
+    data(){
+      return {
+
+      }
+    },
+    mounted(){
+      console.log("dataSouce:", this)
+    }
 
 }
 </script>
