@@ -78,6 +78,34 @@ export const constantRoutes = [
   },
 
   {
+    path: '/metadata',
+    component: Layout,
+    redirect: '/metadata/dataSource',
+    name: 'Metadata',
+    meta: { title: '元数据管理', icon: 'metadata' },
+    children: [
+      {
+        path: 'dataSource',
+        name: 'DataSource',
+        component: () => import('@/views/metadata/dataSource/index'),
+        meta: { title: '数据源', icon: 'dataSource' }
+      },
+      {
+        path: 'tableInfo',
+        name: 'TableInfo',
+        component: () => import('@/views/metadata/tableInfo/index'),
+        meta: { title: '表信息', icon: 'tree' }
+      },
+      {
+        path: 'sqlEditor',
+        name: 'SqlEditor',
+        component: () => import('@/views/metadata/sqlEditor/index'),
+        meta: { title: 'SQL编辑器', icon: 'tree' }
+      }
+    ]
+  },
+
+  {
     path: '/form',
     component: Layout,
     children: [
