@@ -1,12 +1,12 @@
 <template>
   <div>
-    我是数据源组件
+    <h1>我是表管理组件</h1>
   </div>
 </template>
 
 <script>
 export default {
-    name:'DataSource'
+    name:'TableInfo'
 
 }
 </script>
