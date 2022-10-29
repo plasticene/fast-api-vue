@@ -23,3 +23,4 @@ function param2Obj(url) {
 module.exports = {
   param2Obj
 }
+
