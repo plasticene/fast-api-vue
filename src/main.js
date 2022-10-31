@@ -1,7 +1,9 @@
 import Vue from 'vue'
 
 // 字典标签组件
-import DictTag from '@/components/dictTag'
+import DictTag from '@/components/DictTag'
+// 分页组件
+import Pagination from '@/components/Pagination'
 
 import 'normalize.css/normalize.css' // A modern alternative to CSS resets
 
@@ -32,12 +34,13 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // set ElementUI lang to EN
-Vue.use(ElementUI, { locale })
+Vue.use(ElementUI)
 // 如果想要中文版 element-ui，按如下方式声明
 // Vue.use(ElementUI)
 
 // 全局组件挂载
 Vue.component('DictTag', DictTag)
+Vue.component('Pagination', Pagination)
 
 Vue.config.productionTip = false
 
