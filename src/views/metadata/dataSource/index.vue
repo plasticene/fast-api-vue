@@ -47,7 +47,6 @@
         <el-table-column type="selection" width="55" />
         <el-table-column label="序号" align="center" type="index" />
         <el-table-column label="名称" align="center" prop="name" />
-        <!-- <el-table-column label="类型" align="center" prop="type" /> -->
         <el-table-column label="类型" align="center" prop="type">
           <template slot-scope="scope">
             <dict-tag :dictEnum="tpyeEnum" :value="scope.row.type"/>
@@ -65,7 +64,12 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="数据库" align="center" prop="databaseList" />
+        <el-table-column  label="数据库" align="center">
+          <template slot-scope="scope">
+            <span>{{database(scope.row)}}</span>
+          </template>
+        </el-table-column>
+        <!-- <el-table-column label="数据库" align="center" prop="databaseList" /> -->
         <el-table-column label="用户名" align="center" prop="userName" />
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template slot-scope="scope">
@@ -74,6 +78,9 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
+                  @pagination="getList"/>
 
   </div>
 </template>
@@ -137,6 +144,20 @@ export default {
       }
     },
 
+    computed: {
+      database() {
+        return dataSource => {
+          const databaseList = dataSource.databaseList
+          if (databaseList !== undefined && databaseList.length > 0) {
+            return databaseList.join(', ')
+          } else {
+            return ''
+          }
+        }
+      }
+
+    },
+
     created() {
       this.getList();
     },
@@ -146,7 +167,6 @@ export default {
       getList() {
         this.loading = true;
         getDataSourceList(this.queryParams).then(response => {
-          console.log(1111, response)
           this.dataSourceList = response.data.list;
           this.total = response.data.total;
           this.loading = false;
