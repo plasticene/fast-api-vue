@@ -4,6 +4,8 @@ import Vue from 'vue'
 import DictTag from '@/components/DictTag'
 // 分页组件
 import Pagination from '@/components/Pagination'
+// 右侧工具栏
+import RightToolbar from '@/components/RightToolbar'
 
 import 'normalize.css/normalize.css' // A modern alternative to CSS resets
 
@@ -41,6 +43,7 @@ Vue.use(ElementUI)
 // 全局组件挂载
 Vue.component('DictTag', DictTag)
 Vue.component('Pagination', Pagination)
+Vue.component('RightToolbar', RightToolbar)
 
 Vue.config.productionTip = false
 
