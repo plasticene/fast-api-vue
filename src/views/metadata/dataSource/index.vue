@@ -105,6 +105,10 @@
           <el-form-item label="密码" prop="password">
             <el-input v-model="form.password" placeholder="请输入密码" type="password" />
           </el-form-item>
+
+          <el-form-item label="数据库" prop="database" >
+            <el-input v-model="form.database" type="textarea" placeholder="请输入要访问的数据库，多个用英文逗号隔开"/>
+          </el-form-item>
           
           <el-form-item label="状 态" prop="status">
             <el-radio-group v-model="form.status">
@@ -114,7 +118,9 @@
             </el-radio-group>
           </el-form-item>
 
-          <el-button type="info" plain icon="el-icon-connection" size="small" style="margin-left: 80px;">测试连接</el-button>
+          <el-button :type="check.type"  :icon="check.icon" plain
+            size="small" style="margin-left: 80px;" @click="checkConnection">测试连接
+          </el-button>
 
         </el-form>
         <div slot="footer" class="dialog-footer">
@@ -130,7 +136,7 @@
 </template>
 
 <script>
-import { getDataSourceList } from '@/api/metadata/dataSource';
+import { getDataSourceList, checkConnection, addDataSource, updateDataSource } from '@/api/metadata/dataSource';
 export default {
     name:'DataSource',
     data() {
@@ -149,6 +155,13 @@ export default {
         total: 0,
         // 数据源列表数据
         dataSourceList:[],
+
+        // check button样式控制
+        check:{
+          type: 'info',
+          icon:'e-icon-connection',
+          isPass: 0,
+        },
 
         // 状态枚举
         statusEnum: [
@@ -216,7 +229,7 @@ export default {
           password: [
             { required: true, message: "密码不能为空", trigger: "blur" }
           ],
-          databaseList: [
+          database: [
             { required: true, message: "数据库不能为空", trigger: "blur" }
           ]
         }
@@ -279,23 +292,97 @@ export default {
         this.resetForm("form");
       },
 
+      // 测试数据源连接方法 
+      checkConnection() {
+        this.$refs["form"].validate(valid => {
+          if (valid) {
+            const params = {
+              ...this.form,
+              databaseList: this.form.database.split(',')
+            }
+            delete params.database
+            checkConnection(params).then(response => {
+              this.$message({
+                type: "success",
+                message: '连接成功'
+              })
+              this.check.icon = 'el-icon-success'
+              this.check.type = 'success'
+              this.check.isPass = 1
+            })
+
+          }
+
+        })
+      },
+
+      //点击新增按钮调用方法
       handleAdd() {
         this.reset()
         this.open = true
         this.title = "添加数据源"
       },
 
-      handleExport() {
 
+      // 点击编辑按钮
+      handleUpdate(row) {
+        this.reset();
+        const param = {
+          ...row,
+          database: row.databaseList.join(",")
+        }
+        this.form = param
+        this.open = true
+        this.title="修改数据源"
       },
 
-      handleUpdate(row) {
+
+      
+
+      //数据源新增、修改弹出框取消按钮
+      cancel() {
+        this.open = false;
+        this.reset();
+      },
+
+      // 数据源新增、修改提交方法
+      submitForm() {
+        this.$refs["form"].validate(valid => {
+          if (valid) {
+
+            // 修改
+            if (this.form.id !== undefined) {
+              updateDataSource(this.form).then(response => {
+                this.$message({
+                  type: "success",
+                  message: '修改成功'
+                })
+                this.open = false
+                this.getList()
+              });
+            } else {
+              // 新增
+              addDataSource(this.form).then(response => {
+                this.$message({
+                  type: "success",
+                  message: '新增成功'
+                })
+                this.open = false;
+                this.getList();
+              });
+            }
+          }
+        });
+      },
+
+      
+      handleExport() {
 
       },
 
       handleDelete() {
 
-      }
+      },
 
     }
 
