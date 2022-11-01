@@ -6,7 +6,7 @@
         </el-form-item>
 
         <el-form-item label="类型" prop="type">
-          <el-select v-model="queryParams.status" placeholder="数据源类型" clearable style="width: 120px">
+          <el-select v-model="queryParams.type" placeholder="数据源类型" clearable style="width: 120px">
             <el-option v-for="dict in tpyeEnum" :key="parseInt(dict.value)" :label="dict.label" :value="parseInt(dict.value)"/>
           </el-select>
         </el-form-item>
@@ -82,6 +82,50 @@
       <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                   @pagination="getList"/>
 
+          <!-- 添加或修改岗位对话框 -->
+      <el-dialog :title="title" :visible.sync="open" width="450px" append-to-body>
+        <el-form ref="form" :model="form" :rules="rules" label-width="80px" label-position="left" style="margin-left: 20px;" >
+          <el-form-item label="名称" prop="name">
+            <el-input v-model="form.name" placeholder="请输入数据源名称" />
+          </el-form-item>
+          <el-form-item label="类型" prop="type" >
+            <el-select v-model="form.type" placeholder="数据源类型">
+              <el-option v-for="dict in tpyeEnum" :key="parseInt(dict.value)" :label="dict.label" :value="parseInt(dict.value)"/>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="主机" prop="host">
+            <el-input v-model="form.host" placeholder="127.0.0.1" />
+          </el-form-item>
+          <el-form-item label="端口" prop="port">
+            <el-input v-model="form.port" placeholder="3306" />
+          </el-form-item>
+          <el-form-item label="用户名" prop="userName">
+            <el-input v-model="form.userName" placeholder="请输入用户名" />
+          </el-form-item>
+          <el-form-item label="密码" prop="password">
+            <el-input v-model="form.password" placeholder="请输入密码" type="password" />
+          </el-form-item>
+          
+          <el-form-item label="状 态" prop="status">
+            <el-radio-group v-model="form.status">
+              <el-radio v-for="dict in statusEnum" :key="parseInt(dict.value)" :label="parseInt(dict.value)">
+                {{dict.label}}
+              </el-radio>
+            </el-radio-group>
+          </el-form-item>
+
+          <el-button type="info" plain icon="el-icon-connection" size="small" style="margin-left: 80px;">测试连接</el-button>
+
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button type="primary" @click="submitForm">确 定</el-button>
+          <el-button @click="cancel">取 消</el-button>
+        </div>
+      </el-dialog>            
+                  
+
+      
+
   </div>
 </template>
 
@@ -97,22 +141,28 @@ export default {
         exportLoading: false,
         // 显示搜索条件
         showSearch: true,
+        // 是否显示弹出层
+        open: false,
+        // 弹出层标题
+        title: '',
         // 总条数
         total: 0,
         // 数据源列表数据
         dataSourceList:[],
 
+        // 状态枚举
         statusEnum: [
-          {
-            label: "关闭",
-            value: 0
-          },
           {
             label: "开启",
             value: 1
+          },
+          {
+            label: "关闭",
+            value: 0
           }
         ],
 
+        // 数据源类型枚举
         tpyeEnum:[
           {
             label: 'MySQL',
@@ -132,7 +182,6 @@ export default {
           }
         ],
     
-
         // 查询参数
         queryParams: {
           pageNo: 1,
@@ -140,6 +189,36 @@ export default {
           name: undefined,
           type: undefined,
           status: undefined
+        },
+
+        // 表单参数
+        form: {},
+        // 表单校验
+        rules: {
+          name: [
+            { required: true, message: "名称不能为空", trigger: "blur" }
+          ],
+          type: [
+            { required: true, message: "类型不能为空", trigger: "blur" }
+          ],
+          host: [
+            { required: true, message: "主机不能为空", trigger: "blur" }
+          ],
+          port: [
+            { required: true, message: "端口不能为空", trigger: "blur" }
+          ],
+          host: [
+            { required: true, message: "主机不能为空", trigger: "blur" }
+          ],
+          userName: [
+            { required: true, message: "用户名不能为空", trigger: "blur" }
+          ],
+          password: [
+            { required: true, message: "密码不能为空", trigger: "blur" }
+          ],
+          databaseList: [
+            { required: true, message: "数据库不能为空", trigger: "blur" }
+          ]
         }
       }
     },
@@ -185,8 +264,25 @@ export default {
         this.handleQuery();
       },
 
-      handleAdd() {
+      reset() {
+        this.form = {
+          id: undefined,
+          name: undefined,
+          type: 0,
+          host: undefined,
+          port: undefined,
+          userName: undefined,
+          password: undefined,
+          databaseList: undefined,
+          status: 1
+        }
+        this.resetForm("form");
+      },
 
+      handleAdd() {
+        this.reset()
+        this.open = true
+        this.title = "添加数据源"
       },
 
       handleExport() {
