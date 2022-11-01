@@ -7,6 +7,9 @@ import Pagination from '@/components/Pagination'
 // 右侧工具栏
 import RightToolbar from '@/components/RightToolbar'
 
+import { parseTime, resetForm, addDateRange, addBeginAndEndTime, handleTree} from '@/utils/common'
+
+
 import 'normalize.css/normalize.css' // A modern alternative to CSS resets
 
 import ElementUI from 'element-ui'
@@ -44,6 +47,9 @@ Vue.use(ElementUI)
 Vue.component('DictTag', DictTag)
 Vue.component('Pagination', Pagination)
 Vue.component('RightToolbar', RightToolbar)
+
+// 全局方法挂载
+Vue.prototype.resetForm = resetForm
 
 Vue.config.productionTip = false
 
