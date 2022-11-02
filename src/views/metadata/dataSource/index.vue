@@ -22,19 +22,18 @@
           <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
         </el-form-item>
       </el-form>
-
       <el-row :gutter="10" class="mb8">
         <el-col :span="1.5">
           <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
                      >新增</el-button>
         </el-col>
         <el-col :span="1.5">
-          <el-button type="success" plain icon="el-icon-edit" size="mini" @click="handleAdd"
-                     >编辑</el-button>
+          <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="selections.length === 0"
+                     @click="handleChnageStatus">调整状态</el-button>
         </el-col>
         <el-col :span="1.5">
-          <el-button type="danger" plain icon="el-icon-delete" size="mini" @click="handleAdd"
-                     >删除</el-button>
+          <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="selections.length === 0" 
+                     @click="batchDelete">删除</el-button>
         </el-col>
         <el-col :span="1.5">
           <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" :loading="exportLoading"
@@ -43,7 +42,7 @@
         <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
       </el-row>
 
-      <el-table v-loading="loading" :data="dataSourceList">
+      <el-table v-loading="loading" :data="dataSourceList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column label="序号" align="center" type="index" />
         <el-table-column label="名称" align="center" prop="name" />
@@ -57,10 +56,10 @@
         <el-table-column prop="status" label="状态" align="center">
           <template slot-scope="scope">
             <el-switch
-              v-model="scope.row.enabled"
-              active-color="green"
-              inactive-color="e6e6e6"
-              @change="changeEnabled(scope.row, scope.row.enabled)"
+              v-model="scope.row.status"
+              :active-value="1"
+              :inactive-value="0"
+              @change="switchStatus(scope.row)"
             />
           </template>
         </el-table-column>
@@ -82,8 +81,8 @@
       <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                   @pagination="getList"/>
 
-          <!-- 添加或修改岗位对话框 -->
-      <el-dialog :title="title" :visible.sync="open" width="450px" append-to-body>
+      <!-- 添加或修改数据源对话框 -->
+      <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
         <el-form ref="form" :model="form" :rules="rules" label-width="80px" label-position="left" style="margin-left: 20px;" >
           <el-form-item label="名称" prop="name">
             <el-input v-model="form.name" placeholder="请输入数据源名称" />
@@ -124,19 +123,30 @@
 
         </el-form>
         <div slot="footer" class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
+          <el-button type="primary" @click="submitForm" :disabled="check.isPass === 0">确 定</el-button>
           <el-button @click="cancel">取 消</el-button>
         </div>
-      </el-dialog>            
-                  
-
+      </el-dialog>    
       
-
+       <!-- 批量编辑数据源状态 -->
+       <el-dialog title="调整数据源状态" :visible.sync="changeStatusOpen" width="500px" append-to-body>
+        <el-radio-group v-model="status">
+              <el-radio v-for="dict in statusEnum" :key="parseInt(dict.value)" :label="parseInt(dict.value)">
+                {{dict.label}}
+              </el-radio>
+            </el-radio-group>
+        <div slot="footer" class="dialog-footer">
+          <el-button type="primary" @click="batchChangeStatus">确 定</el-button>
+          <el-button @click="cancelChangeStatus">取 消</el-button>
+        </div>
+      </el-dialog>
+                  
   </div>
 </template>
 
 <script>
-import { getDataSourceList, checkConnection, addDataSource, updateDataSource } from '@/api/metadata/dataSource';
+import { getDataSourceList, checkConnection, addDataSource, updateDataSource, 
+  delDataSource, changeDataSourceStatus } from '@/api/metadata/dataSource';
 export default {
     name:'DataSource',
     data() {
@@ -149,6 +159,8 @@ export default {
         showSearch: true,
         // 是否显示弹出层
         open: false,
+        changeStatusOpen: false,
+        status:1,
         // 弹出层标题
         title: '',
         // 总条数
@@ -156,11 +168,14 @@ export default {
         // 数据源列表数据
         dataSourceList:[],
 
+        // 多选
+        selections: [],
+
         // check button样式控制
         check:{
           type: 'info',
-          icon:'e-icon-connection',
-          isPass: 0,
+          icon:'el-icon-connection',
+          isPass: 0
         },
 
         // 状态枚举
@@ -247,7 +262,20 @@ export default {
           }
         }
       }
+    },
 
+    // 使用监视属性实现数据源源编辑框一旦有值修改必须先测试连接，才能提交保存
+    watch: {
+      form: {
+        deep:true,
+        handler(val, oldVal) {
+          console.log("form变化了")
+          this.check.type = 'info',
+          this.check.icon = 'el-icon-connection'
+          this.check.isPass = 0
+        }
+
+      }
     },
 
     created() {
@@ -256,6 +284,11 @@ export default {
 
     methods: {
 
+      handleSelectionChange(val) {
+        this.selections = val
+      },
+
+      // 列表方法
       getList() {
         this.loading = true;
         getDataSourceList(this.queryParams).then(response => {
@@ -298,7 +331,7 @@ export default {
           if (valid) {
             const params = {
               ...this.form,
-              databaseList: this.form.database.split(',')
+              databaseList: this.form.database.replace(/\s/g,"").split(',')
             }
             delete params.database
             checkConnection(params).then(response => {
@@ -327,13 +360,25 @@ export default {
       // 点击编辑按钮
       handleUpdate(row) {
         this.reset();
-        const param = {
+        const params = {
           ...row,
-          database: row.databaseList.join(",")
+          database: row.databaseList.join(", ")
         }
-        this.form = param
+        this.form = params
         this.open = true
         this.title="修改数据源"
+      },
+
+      // 点击
+      handleChnageStatus() {
+        this.status = 1
+        this.changeStatusOpen = true
+      },
+
+      cancelChangeStatus() {
+        this.status = 1
+        this.changeStatusOpen = false
+
       },
 
 
@@ -349,7 +394,11 @@ export default {
       submitForm() {
         this.$refs["form"].validate(valid => {
           if (valid) {
-
+            const params = {
+              ...this.form,
+              databaseList: this.form.database.replace(/\s/g,"").split(',')
+            }
+            delete params.database
             // 修改
             if (this.form.id !== undefined) {
               updateDataSource(this.form).then(response => {
@@ -375,14 +424,91 @@ export default {
         });
       },
 
+      /** 列表中删除按钮操作  单条 */
+      handleDelete(row) {
+        const ids = [row.id]
+        this.deleteDataSource(ids)
+      },
+
+      // 列表上方删除按钮批量删除
+      batchDelete() {
+        const ids = []
+        this.selections.forEach(val => {
+          ids.push(val.id)
+        })
+        this.deleteDataSource(ids)
+      },
+
+      // 删除数据源
+      deleteDataSource(ids) {
+        this.$confirm('是否删除已选择数据源?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+          }).then(() => {
+              delDataSource(ids).then(() => {
+                  this.$message({
+                      type: 'success',
+                      message: '删除成功!'
+                  });
+                  // 重新获取列表的接口
+                  this.getList()
+              })
+              
+          }).catch(() => {});
+      },
+
+      switchStatus(row) {
+        // 此时，row 已经变成目标状态了，所以可以直接提交请求和提示
+        const params = {
+          isBatch: false,
+          status: row.status,
+          dataSourceIds: [row.id]
+        }
+        this.changeStatus(params)
+      },
+
+      // 批量更新数据源状态
+      batchChangeStatus() {
+        const ids = []
+        this.selections.forEach(val => {
+          ids.push(val.id)
+        })
+        const params = {
+          isBatch: true,
+          status: this.status,
+          dataSourceIds: ids
+        }
+        this.changeStatus(params)
+      },
+
+      // 列表单个开关数据源状态
+      changeStatus(params) { 
+      
+        const statusStr = params.status === 1 ? "启用" : "停用";
+        this.$confirm('确认要"' + statusStr + '" 已选择的数据源吗?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+          }).then(() => {
+            changeDataSourceStatus(params);
+          }).then(() => {
+            this.$message({
+              type: 'success',
+              message: statusStr + '成功!'
+            });
+            if (params.isBatch) {
+              this.changeStatusOpen = false
+              this.getList()
+            }
+          }).catch(() => {});
+      },
       
       handleExport() {
 
       },
 
-      handleDelete() {
-
-      },
+    
 
     }
 
