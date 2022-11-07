@@ -9,6 +9,14 @@ export function getDataSourceList(query) {
     })
 }
 
+// 获取所有可用的数据源
+export function getOpenList() {
+    return request({
+        url: '/fds/dataSource/list',
+        method: 'get'
+    })
+}
+
 // 检测数据源是否可以连接
 export function checkConnection(data) {
     return request({
