@@ -97,9 +97,16 @@ export const constantRoutes = [
         meta: { title: '表信息', icon: 'tree' }
       },
       {
-        path: 'sqlEditor',
+        path: 'sqlQuery',
+        name: 'SqlQuery',
+        component: () => import('@/views/metadata/sqlQuery/index'),
+        meta: { title: 'SQL查询', icon: 'tree' }
+      },
+      {
+        path: 'sqlQuery/sqlEditor',
         name: 'SqlEditor',
-        component: () => import('@/views/metadata/sqlEditor/index'),
+        hidden: true,
+        component: () => import('@/views/metadata/sqlQuery/editor'),
         meta: { title: 'SQL编辑器', icon: 'tree' }
       }
     ]
