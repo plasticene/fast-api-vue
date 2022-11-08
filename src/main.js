@@ -1,5 +1,9 @@
 import Vue from 'vue'
 
+import VueCodeMirror from 'vue-codemirror'
+import 'codemirror/lib/codemirror.css'
+Vue.use(VueCodeMirror)
+
 // 字典标签组件
 import DictTag from '@/components/DictTag'
 // 分页组件
