@@ -10,7 +10,7 @@ export function getDataSourceList(query) {
 }
 
 // 获取所有可用的数据源
-export function getOpenList() {
+export function getOpenDataSourceList() {
     return request({
         url: '/fds/dataSource/list',
         method: 'get'
