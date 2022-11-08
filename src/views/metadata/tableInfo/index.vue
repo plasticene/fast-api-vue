@@ -60,7 +60,7 @@
 
 <script>
 import splitPane from 'vue-splitpane'
-import {getOpenList} from '@/api/metadata/dataSource'
+import {getOpenDataSourceList} from '@/api/metadata/dataSource'
 import {getTableList, getTableStruct, getTableData} from '@/api/metadata/tableInfo'
 export default {
     name:'TableInfo',
@@ -117,7 +117,7 @@ export default {
       },
 
       getList() {
-        getOpenList().then(response => {
+        getOpenDataSourceList().then(response => {
           const dataSourceList = response.data
 
           dataSourceList.forEach(val => {
