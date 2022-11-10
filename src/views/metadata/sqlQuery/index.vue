@@ -5,7 +5,7 @@
         <el-input v-model="queryParams.name" placeholder="请输入SQL查询" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
 
-      <el-form-item label="分组" prop="folderId">
+      <el-form-item style="margin-left:50px" label="分组" prop="folderId">
         <el-select v-model="queryParams.folderId" placeholder="所属分组" clearable @keyup.enter.native="handleQuery">
                 <el-option v-for="folder in folderList" :key="folder.id" :label="folder.name" :value="folder.id"/>
             </el-select>
@@ -27,6 +27,19 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- 添加或修改数据源对话框 -->
+    <el-dialog title="添加分组" :visible.sync="open" width="500px" append-to-body>
+        <el-form ref="form" :model="form" :rules="rules" label-width="80px" label-position="left" style="margin-left: 20px;" >
+          <el-form-item label="名称" prop="name">
+            <el-input v-model="form.name" placeholder="请输入分组名称" />
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button type="primary" @click="submitForm">确 定</el-button>
+          <el-button @click="cancel">取 消</el-button>
+        </div>
+      </el-dialog>
+
     <el-table v-loading="loading" :data="tableList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column label="序号" align="center" type="index" />
@@ -44,12 +57,13 @@
       </el-table>
       <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
                   @pagination="getList"/>
+                
   </div>
 </template>
 
 <script>
 import { getSqlQueryList } from '@/api/metadata/sqlQuery';
-import { getFolderListByType } from '@/api/folder/folder';
+import { getFolderListByType, addFolder } from '@/api/folder/folder';
 export default {
     name:'SqlQuery',
     data() {
@@ -57,6 +71,7 @@ export default {
 
         // 遮罩层
         loading: true,
+        open: false,
         showSearch:true,
         tableList:[],
         total: 0,
@@ -69,6 +84,12 @@ export default {
           name: undefined,
           folderId: undefined,
         },
+        form: {},
+        rules: {
+          name: [
+            { required: true, message: "名称不能为空", trigger: "blur" }
+          ]
+        }
       }
     },
 
@@ -103,7 +124,40 @@ export default {
       },
 
       handleAddFolder() {
+        this.open = true
+      },
+      
+      reset() {
+        this.form = {
+          name: undefined,
+        }
+        this.resetForm("form");
+      },
 
+      cancel() {
+        this.reset()
+        this.open = false;
+      },
+
+      // 数据源新增、修改提交方法
+      submitForm() {
+        this.$refs["form"].validate(valid => {
+          if (valid) {
+            const params = {
+              ...this.form,
+              type: 0,
+            }
+            addFolder(params).then(response => {
+                this.$message({
+                  type: "success",
+                  message: '新增成功'
+                })
+                this.reset()
+                this.open = false
+                this.getFolderList()
+              })
+          }
+        })
       },
 
       handleAdd() {
