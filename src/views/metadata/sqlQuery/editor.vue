@@ -34,6 +34,7 @@
             <el-button type="primary" style="margin-left: 20px;" plain size="mini" @click="executeSQL">执 行</el-button>
         </div>
 
+        <!-- 引入SQL代码在线编辑框组件 -->
         <sql-code ref="cm" :sql="sqlContent" :handleSQL="handleSQL"></sql-code>
 
         <el-tabs style="height:350px; overflow: auto;" v-model="activeName">
@@ -113,6 +114,7 @@ export default {
     },
 
     created() {
+        // 判断是新增还是修改
         this.id = this.$route.query.id
         if (this.id === undefined) {
             this.title = '新增SQL查询'
@@ -124,6 +126,7 @@ export default {
             })
 
         }
+        // 获取数据源下拉
         getOpenDataSourceList().then(response => {
             this.dataSourceList = response.data
             this.dataSourceList.forEach(dataSource => {
@@ -144,16 +147,20 @@ export default {
             })
         })
 
+        // 获取分组下拉
         getFolderListByType(0).then(response => {
             this.folderList = response.data
         })
     },
 
     methods: {
+        // 取消，回到SQL查询列表页
         cancel() {
             this.$router.push({ path: "/metadata/sqlQuery"});
         },
+
         submitForm() {
+            // 保存 根据是否有id区别是新增还是修改
             this.$refs["form"].validate(valid => {
                 if (valid) {
                     const params = {
@@ -187,6 +194,7 @@ export default {
 
         },
   
+        // 选择数据源之后，根据数据源获取数据库下拉
         selectDataSource(value) {
             this.dataSourceList.forEach(dataSource => {
                 if (dataSource.id === value) {
@@ -195,6 +203,7 @@ export default {
             })
         },
 
+        // 执行SQL
         executeSQL() {
             const params = {
                 ...this.form,
@@ -219,6 +228,7 @@ export default {
 
         },
 
+        // 提供处理SQL，供子组件使用，传递SQL语句
         handleSQL(content) {
             this.sqlContent = content
         }

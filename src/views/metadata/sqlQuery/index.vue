@@ -19,8 +19,10 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAddFolder"
+                    >新增分组</el-button>
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
-                    >新增</el-button>
+                    >新增SQL查询</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -98,6 +100,10 @@ export default {
       resetQuery() {
         this.resetForm("queryForm");
         this.handleQuery();
+      },
+
+      handleAddFolder() {
+
       },
 
       handleAdd() {

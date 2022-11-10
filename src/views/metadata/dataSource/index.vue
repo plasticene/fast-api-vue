@@ -178,7 +178,7 @@ export default {
           isPass: 0
         },
 
-        // 状态枚举
+        // 状态枚举  不知道这么维护枚举值是否合理？？？？？？
         statusEnum: [
           {
             label: "开启",
@@ -274,7 +274,6 @@ export default {
           this.check.icon = 'el-icon-connection'
           this.check.isPass = 0
         }
-
       }
     },
 

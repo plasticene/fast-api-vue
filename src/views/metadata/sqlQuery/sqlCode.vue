@@ -21,6 +21,7 @@
   require("codemirror/addon/hint/sql-hint");
   
   export default {
+    // SQL 代码在线编辑器组件
     name: "sqlCode",
     components: {
       codemirror
@@ -29,8 +30,6 @@
       return {
         sqlContent: '',
         cmInstance: null, // 当前codemirror实例
-        // cmList: [],
-        // sequence: 0,
         cmOptions: {
           value: '',
           styleActiveLine: true,
@@ -51,6 +50,7 @@
       }
     },
     // props: ['sql', 'mode', 'tableHits', 'handleSQL'],
+    // 属性，通过父组件引用该组件时候，传递数据值
     props: {
       sql: {
         type: String,
@@ -69,11 +69,13 @@
       }
     },
     methods: {
+      // 注意该方法会在父组件的created()钩子之前执行，所以在我们编辑SQL查询，SQL语句是通过created()方法掉后端获取的，
+      // 但是这时候已经不能渲染到该组件的文本框了，只能通过v-model动态绑定了
       onCmReady(cm) {
         // console.log('cm', cm)
-        // cm.setValue(this.sql)
-        // debugger
-        // this.cmList.push(cm)
+        cm.setValue(this.sql)
+        debugger
+        this.cmList.push(cm)
         if (this.mode === "mini")
           cm.setSize('100%', '400px')
         else {
@@ -94,8 +96,7 @@
 
       inputChange(content) {
         this.$nextTick(() => {
-            // console.log("content:" + content)
-            // this.sql = content
+            // 调用父组件把SQL语句传递过去
             this.handleSQL(content)
             
         });
@@ -113,6 +114,7 @@
         this.cmOptions.hintOptions.tables = val
       },
 
+      // 监视sql属性，赋值给sqlContent,动态绑定
       sql(val, oldVal) {
         this.sqlContent = val
       }

@@ -9,9 +9,6 @@
             <el-form-item label="数据库:" prop="databaseName"> {{ form.databaseName }}</el-form-item>
             <el-form-item label="SQL语句:" prop="sqlContent"> {{ form.sqlContent }}</el-form-item>
         </el-form>
-        
-
-
     </div>
   
 </template>

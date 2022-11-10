@@ -16,7 +16,7 @@
               :data="treeData"
               :props="defaultProps"
               :filter-node-method="filterNode"
-              @click="handleNodeClick"
+              @node-click="handleNodeClick"
               @node-expand="handleNodeClick"
               ref="tree">
               <span slot-scope="{ node, data}" class="span__">
@@ -69,23 +69,33 @@ export default {
     },
     data() {
       return {
+        // 树搜索
         filterText: '',
+        // 表数据查询总页数
         total: 0,
+        // 是否点击了数据源树结构下表，点击之后需要展示右侧界面
         selectTable: false,
-        activeTabName: 'tableData',
+        // 表数据和表结构tab页切换
+        activeTabName: 'tableStruct',
+        // 表结构
         tableStruct:[],
+        // 表数据
         tableData:[],
+        // 表标签栏，因为每个表的字段不一样，所以表格的label是动态变化的
         tableLabel:[],
+        // 表名和注释，用于点击表之后，在右侧布局中展示
         table:{
           name: '',
           comment: '',
         },
+        // 左侧数据源目录树结果
         treeData: [],
+        // 树结构定义
         defaultProps: {
           children: 'children',
           label: 'label'
         },
-           // 查询参数
+        // 查询参数
         queryParams: {
           pageNo: 1,
           pageSize: 10,
@@ -96,6 +106,7 @@ export default {
       }
     },
 
+    // 监视树搜索变量值，实时搜索
     watch: {
       filterText(val) {
         this.$refs.tree.filter(val);
@@ -108,7 +119,7 @@ export default {
 
     methods: {
       resize() {
-        console.log('resize')
+        
       },
 
       filterNode(value, data) {
@@ -117,22 +128,29 @@ export default {
       },
 
       getList() {
+        // 调接口获取左侧数据源目录树，并按定义构造这颗tree
+        // 数据源名称一级  其下面的数据库二级，数据库下的表三级
+        // 注意：这里只能获取到数据源和下面的数据库，表只能在点击数据库之后调接口获取表，因为后端没办法在多数据源多数据库一下
+        //      一次性返回所有表
         getOpenDataSourceList().then(response => {
           const dataSourceList = response.data
-
           dataSourceList.forEach(val => {
             const databaseList = val.databaseList
             const database = []
+            // 拿到数据源下的数据库，构建tree的二级结构
             databaseList.forEach(name => {
               const ds = {
                 id: undefined,
+                // 这里放入数据源id，方便点击数据库掉接口获取下面的表时候传递数据源id
                 dataSourceId: val.id,
                 label: name,
                 icon: 'database',
+                // 指定数据库有一个默认的空孩子，不然数据库级左侧展开箭头没有，不知道这么实现是否合理？？？
                 children:[{}]
               }
               database.push(ds)
             })
+            // 根据数据源类型匹配对应的svg图标，这么写感觉不太优雅？？？？
             var icon = ''
             if (val.type === 0) {
               icon = 'mysql'
@@ -146,6 +164,7 @@ export default {
             if (val.type === 3) {
               icon = 'oracle'
             }
+            // 一个数据源和数据源下数据库构造出tree一个节点
             const dataSource = {
               id: val.id,
               label: val.name,
@@ -154,25 +173,27 @@ export default {
             }
             this.treeData.push(dataSource)
           })
-          console.log("treeData", this.treeData)
-
         });
       },
 
+      // 处理树点击逻辑，这里点击数据库时候会掉两次接口，因为触发了node-click和node-expand事件，还没有解决这个问题。。。
       handleNodeClick(data, node, vc) {
+        // 如果是收缩或者该节点不是叶子节点，就不做任何处理
         if (!node.expanded && !node.isLeaf) {
           return
         }
+        // 如果数据源id不为空，且不是叶子节点，说明点击的是数据库，此时根据数据源id和数据库获取该库下的表
         if (data.dataSourceId !== undefined && !data.isLeaf) {
-          // 说明点击的是数据库，此时根据数据源id和数据库获取该库下的表
           const params = {
             dataSourceId: data.dataSourceId,
             databaseName: data.label
           }
+          // 调接口获取数据库下的表，并放到tree结构下面
           getTableList(params).then(response => {
             const tableList = response.data
             if (tableList !== undefined) {
               const tables = []
+              // 构建当前表目录节点，也就是最下级
               tableList.forEach(table => {
                 const t = {
                   id: undefined,
@@ -185,13 +206,14 @@ export default {
                 }
                 tables.push(t)
               })
+              // 当前data就是数据库级，直接把上面的表层级做data孩子即可
               data.children = tables
             }
           })
         }
 
+        // 说明此时点击是表，这时候需要获取表结构或者表数据
         if (data.isLeaf) {
-          // 说明此时点击是表，这时候需要获取表结构或者表数据
           this.selectTable = true
           this.table.name= data.label
           this.table.comment = data.comment
@@ -202,7 +224,9 @@ export default {
         }  
       },
 
+      // 处理右侧布局tab的数据
       hanldeTabData() {
+        // 查询表结构
         if (this.activeTabName === 'tableStruct') {
             const simpleParam = {
               ...this.queryParams
@@ -213,15 +237,18 @@ export default {
               this.tableStruct = response.data
             })
           }
+          // 查询表数据
           if (this.activeTabName == 'tableData') {
             getTableData(this.queryParams).then(response => {
               this.tableData = response.data.content
+              // 动态表头
               this.tableLabel = response.data.head
               this.total = response.data.total
             })
           }
       },
 
+      // 切换tab页再次掉接口, 我看别人的没有掉，这里不掉接口切换之后就没有数据。。。。。
       selectTab(tab, event) {
           this.activeTabName = tab.name;
           this.hanldeTabData()
