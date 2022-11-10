@@ -108,6 +108,13 @@ export const constantRoutes = [
         hidden: true,
         component: () => import('@/views/metadata/sqlQuery/editor'),
         meta: { title: 'SQL编辑器', icon: 'tree' }
+      },
+      {
+        path: 'sqlQuery/sqlDetail',
+        name: 'SqlDetail',
+        hidden: true,
+        component: () => import('@/views/metadata/sqlQuery/detail'),
+        meta: { title: 'SQL详情', icon: 'tree' }
       }
     ]
   },
