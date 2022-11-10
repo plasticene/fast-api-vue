@@ -94,13 +94,13 @@ export const constantRoutes = [
         path: 'tableInfo',
         name: 'TableInfo',
         component: () => import('@/views/metadata/tableInfo/index'),
-        meta: { title: '表信息', icon: 'tree' }
+        meta: { title: '表信息', icon: 'table' }
       },
       {
         path: 'sqlQuery',
         name: 'SqlQuery',
         component: () => import('@/views/metadata/sqlQuery/index'),
-        meta: { title: 'SQL查询', icon: 'tree' }
+        meta: { title: 'SQL查询', icon: 'sqlQuery' }
       },
       {
         path: 'sqlQuery/sqlEditor',
