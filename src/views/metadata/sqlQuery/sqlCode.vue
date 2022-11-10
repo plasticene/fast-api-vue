@@ -1,7 +1,7 @@
 <template>
     <div>
-      <codemirror ref="codemirror" class="myMirror"  :options="cmOptions" @ready="onCmReady" @focus="onCmFocus"
-                  @inputRead="onCmCodeChange" @input="inputChange">
+      <codemirror v-model="sqlContent" ref="codemirror" class="myMirror"  :options="cmOptions" @ready="onCmReady" 
+                  @inputRead="onCmCodeChange" @input="inputChange" >
       </codemirror>
     </div>
   </template>
@@ -27,6 +27,7 @@
     },
     data() {
       return {
+        sqlContent: '',
         cmInstance: null, // 当前codemirror实例
         // cmList: [],
         // sequence: 0,
@@ -69,9 +70,8 @@
     },
     methods: {
       onCmReady(cm) {
-        cm.setValue(this.sql)
-        this.cmInstance = cm
-        this.$emit('appendCm',cm)
+        // console.log('cm', cm)
+        // cm.setValue(this.sql)
         // debugger
         // this.cmList.push(cm)
         if (this.mode === "mini")
@@ -111,6 +111,10 @@
       },
       tableHints(val,OldVal){
         this.cmOptions.hintOptions.tables = val
+      },
+
+      sql(val, oldVal) {
+        this.sqlContent = val
       }
     },
     created() {
