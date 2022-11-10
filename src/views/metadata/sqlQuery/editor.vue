@@ -1,5 +1,7 @@
 <template>
   <div class="app-container">
+    <h3 style="margin-top: 5px;"> {{title}} </h3>
+    <el-divider></el-divider>
     <el-form inline ref="form" :model="form" :rules="rules" label-width="80px" label-position="left" style="margin-left: 20px;" >
         <el-form-item label="名称" prop="name" style="width: 600px">
             <el-input v-model="form.name" placeholder="请输入名称" style="width: 300px" />
@@ -7,8 +9,8 @@
 
         <el-form-item label="分组" prop="folderId" style="width: 600px">
             <el-select v-model="form.folderId" placeholder="数据库" clearable>
-            <el-option v-for="folder in folderList" :key="folder.id" :label="folder.name" :value="folder.id"/>
-          </el-select>
+                <el-option v-for="folder in folderList" :key="folder.id" :label="folder.name" :value="folder.id"/>
+            </el-select>
         </el-form-item>
 
         <el-form-item label="数据源" prop="dataSourceId" style="width: 600px">
@@ -32,9 +34,9 @@
             <el-button type="primary" style="margin-left: 20px;" plain size="mini" @click="executeSQL">执 行</el-button>
         </div>
 
-        <sql-code :sql="sqlContent" :handleSQL="handleSQL"></sql-code>
+        <sql-code ref="cm" :sql="sqlContent" :handleSQL="handleSQL"></sql-code>
 
-        <el-tabs style="height:350px; overflow: auto;" v-model="activeName" @tab-click="selectTab">
+        <el-tabs style="height:350px; overflow: auto;" v-model="activeName">
             <el-tab-pane label="执行结果" name="executeResult">
                 <el-table :data="resultData" border >
                 <el-table-column v-for="head in headList" :key="head.index" 
@@ -64,19 +66,20 @@
 <script>
 import {getOpenDataSourceList} from '@/api/metadata/dataSource'
 import {getFolderListByType} from '@/api/folder/folder'
-import {executeSql, addSqlQuery} from '@/api/metadata/sqlQuery'
+import {executeSql, addSqlQuery, getSqlQueryDetail, updateSqlQuery} from '@/api/metadata/sqlQuery'
 import sqlCode from './sqlCode.vue'
 export default {
-  components: { sqlCode },
+    // 新增或者编辑SQL query组件
     name:'SqlEditor',
     components: {
         sqlCode
-
     },
     data() {
         return {
 
             activeName: 'executeResult',
+            id: undefined,
+            title: '',
             form: {},
             dataSourceList: [],
             databaseList: [],
@@ -110,6 +113,17 @@ export default {
     },
 
     created() {
+        this.id = this.$route.query.id
+        if (this.id === undefined) {
+            this.title = '新增SQL查询'
+        } else {
+            this.title = '修改SQL查询'
+            getSqlQueryDetail(this.id).then(response => {
+                this.form = response.data
+                this.sqlContent = response.data.sqlContent
+            })
+
+        }
         getOpenDataSourceList().then(response => {
             this.dataSourceList = response.data
             this.dataSourceList.forEach(dataSource => {
@@ -144,24 +158,35 @@ export default {
                 if (valid) {
                     const params = {
                         ...this.form,
-                        sqlContent: this.sqlContent
+                        sqlContent: this.sqlContent,
+                        id: this.id
                     }
-                    addSqlQuery(params).then(response => {
-                        this.$message({
-                            type: "success",
-                            message: '新增成功'
+                    if (this.id === undefined) {
+                        addSqlQuery(params).then(response => {
+                            this.$message({
+                                type: "success",
+                                message: '新增成功'
+                            }) 
+                            this.$router.push({ path: "/metadata/sqlQuery"});
                         }) 
-                        this.$router.push({ path: "/metadata/sqlQuery"});
-                    })
+                    } else {
+                        updateSqlQuery(params).then(response => {
+                            this.$message({
+                                type: "success",
+                                message: '修改成功'
+                            }) 
+                            this.$router.push({ path: "/metadata/sqlQuery"});
+                        })
+
+
+                    }
+                    
 
                 }
             })
 
         },
-        selectTab() {
-
-        },
-
+  
         selectDataSource(value) {
             this.dataSourceList.forEach(dataSource => {
                 if (dataSource.id === value) {
@@ -176,7 +201,6 @@ export default {
                 ...this.queryParams,
                 sqlContent: this.sqlContent,
             }
-            console.log('params', params)
             executeSql(params).then(response => {
                 const isSuccess = response.data.isSuccess
                 this.sqlLog = response.data.sqlLog
