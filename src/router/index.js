@@ -120,6 +120,34 @@ export const constantRoutes = [
   },
 
   {
+    path: '/api',
+    component: Layout,
+    redirect: '/api/info',
+    name: 'Api',
+    meta: { title: 'API管理', icon: 'apiManager' },
+    children: [
+      {
+        path: 'info',
+        name: 'ApiInfo',
+        component: () => import('@/views/apiManager/info/index'),
+        meta: { title: 'API', icon: 'apiInfo' }
+      },
+      {
+        path: 'auth',
+        name: 'ApiAuth',
+        component: () => import('@/views/apiManager/auth/index'),
+        meta: { title: 'API权限', icon: 'apiAuth' }
+      },
+      {
+        path: 'visit',
+        name: 'ApiVist',
+        component: () => import('@/views/apiManager/visit/index'),
+        meta: { title: '访问记录', icon: 'apiVisit' }
+      }
+    ]
+  },
+
+  {
     path: '/form',
     component: Layout,
     children: [
