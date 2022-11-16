@@ -54,20 +54,22 @@
         </el-table-column>
         <el-table-column label="操作" align="center"  width="270px">
           <template slot-scope="scope">
-            <el-button size="mini" type="text" icon="el-icon-circle-check" @click="handleDelete(scope.row)">冒烟</el-button>
             <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
-            <el-button size="mini" type="text" icon="el-icon-s-promotion" @click="handleDelete(scope.row)">发布</el-button>
-            <el-button size="mini" type="text" icon="el-icon-bottom" @click="handleDelete(scope.row)">下线</el-button>
+            <el-button size="mini" type="text" :icon="scope.row.isPass ? 'el-icon-success' : 'el-icon-circle-check'" @click="smokeTest(scope.row)">冒烟</el-button>
+            <el-button size="mini" type="text" icon="el-icon-s-promotion" @click="releaseApi(scope.row)" :disabled="!scope.row.isCanRelease">发布</el-button>
+            <el-button size="mini" type="text" icon="el-icon-bottom" @click="offlineApi(scope.row)" :disabled="!scope.row.isCanOffline">下线</el-button>
             <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+      <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
+                  @pagination="getList"/>
 
   </div>
 </template>
 
 <script>
-import {getApiInfoList} from '@/api/apiManager/apiInfo'
+import {getApiInfoList, somkeTest, releaseApi, offlineApi} from '@/api/apiManager/apiInfo'
 import { getFolderListByType } from '@/api/folder/folder'
 export default {
     name: 'ApiInfo',
@@ -134,6 +136,14 @@ export default {
             this.loading = true;
             getApiInfoList(this.queryParams).then(response => {  
                 this.apiInfoList = response.data.list;
+                this.apiInfoList.forEach(apiInfo => {
+                    if (apiInfo.isPass && apiInfo.status !== 1) {
+                        apiInfo.isCanRelease = true
+                    }
+                    if (apiInfo.status === 1 || apiInfo.status === 2) {
+                        apiInfo.isCanOffline = true
+                    }
+                })
                 this.total = response.data.total;
                 this.loading = false;
             });
@@ -161,11 +171,53 @@ export default {
       },
 
       handleAdd() {
+        this.$router.push({ path: "/api/info/create"});
+      },
 
+      handleUpdate(row) {
+        this.$router.push({ path: "/api/info/create", query: {id: row.id}});
       },
 
       handleSelectionChange() {
         
+      },
+
+      smokeTest(row) {
+        somkeTest(row.id).then(response => {
+            this.$message({
+                  type: "success",
+                  message: '冒烟测试通过'
+                })
+            this.getList()
+        })
+      },
+
+      releaseApi(row) {
+        releaseApi(row.id).then(response => {
+            this.$message({
+                  type: "success",
+                  message: '发布成功'
+                })
+            this.getList()
+        })
+      },
+
+      offlineApi(row) {
+        this.$confirm('是否下线该API，下线之后将不能再使用?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+          }).then(() => {
+              offlineApi(row.id).then(() => {
+                  this.$message({
+                      type: 'success',
+                      message: '下线成功!'
+                  });
+                  // 重新获取列表的接口
+                  this.getList()
+              })
+              
+          }).catch(() => {});
       }
 
 
