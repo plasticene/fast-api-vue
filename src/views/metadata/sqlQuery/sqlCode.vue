@@ -74,7 +74,7 @@
       onCmReady(cm) {
         // console.log('cm', cm)
         cm.setValue(this.sql)
-        debugger
+        // debugger
         this.cmList.push(cm)
         if (this.mode === "mini")
           cm.setSize('100%', '400px')
