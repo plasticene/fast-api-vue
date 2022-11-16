@@ -130,19 +130,26 @@ export const constantRoutes = [
         path: 'info',
         name: 'ApiInfo',
         component: () => import('@/views/apiManager/info/index'),
-        meta: { title: 'API', icon: 'apiInfo' }
+        meta: { title: 'API信息', icon: 'apiInfo' }
       },
       {
         path: 'auth',
         name: 'ApiAuth',
         component: () => import('@/views/apiManager/auth/index'),
-        meta: { title: 'API权限', icon: 'apiAuth' }
+        meta: { title: 'API列表', icon: 'apiAuth' }
       },
       {
         path: 'visit',
         name: 'ApiVist',
         component: () => import('@/views/apiManager/visit/index'),
         meta: { title: '访问记录', icon: 'apiVisit' }
+      },
+      {
+        path: 'info/create',
+        name: 'SqlCreate',
+        hidden: true,
+        component: () => import('@/views/apiManager/info/create'),
+        meta: { title: 'API编辑器', icon: 'tree' }
       }
     ]
   },
