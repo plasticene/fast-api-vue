@@ -15,7 +15,7 @@
 
             <el-form-item label="接口类型" prop="type" style="width: 600px">
                 <el-select v-model="form.type" placeholder="类型" clearable>
-                    <el-option v-for="item in apiType" :key="item" :label="item.label" :value="item.value"/>
+                    <el-option v-for="item in apiType" :key="item.value" :label="item.label" :value="item.value"/>
                 </el-select>
             </el-form-item>
     
@@ -43,13 +43,13 @@
     
             <div style="margin-bottom: 10px;">
                 <span>SQL语句</span>
-                <el-button type="primary" style="margin-left: 20px;" plain size="mini" @click="executeSQL">执 行</el-button>
+                <el-button type="primary" style="margin-left: 20px;" plain size="mini" @click="execute">执 行</el-button>
             </div>
     
             <!-- 引入SQL代码在线编辑框组件 -->
             <sql-code ref="cm" :sql="sqlContent" :handleSQL="handleSQL"></sql-code>
     
-            <el-tabs style="height:200px; overflow: auto;" v-model="activeName">
+            <el-tabs style="height:300px; overflow: auto;" v-model="activeName" v-show="showTab">
                 <el-tab-pane label="执行结果" name="executeResult">
                     <el-table :data="resultData" border >
                     <el-table-column v-for="head in headList" :key="head.index" 
@@ -57,7 +57,7 @@
                     </el-table-column>
                     </el-table>
                     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNo" :limit.sync="queryParams.pageSize"
-                        @pagination="executeSQL"/>
+                        @pagination="executeSQL" />
                 </el-tab-pane>
                 <el-tab-pane label="执行日志" name="executeLog">
                     <span>
@@ -67,7 +67,7 @@
             </el-tabs> 
         </el-form>
         <div>
-            <el-table border :data="paramList">
+            <el-table border :data="paramList" style="margin-top: 10px;">
                 <el-table-column label="序号" align="center" type="index" />
                 <el-table-column label="参数名称" align="center" prop="name">
                     <template slot-scope="scope">
@@ -105,9 +105,9 @@
         </div>
         <div style="margin-top: 10px;" >
             <el-button type="primary" @click="submitForm">保 存</el-button>
-            <el-button type="primary" @click="submitForm">冒 烟</el-button>
-            <el-button type="primary" @click="submitForm">发 布</el-button>
-            <el-button @click="cancel">取 消</el-button>
+            <el-button type="primary" @click="smokeTest" :disabled="!isCanSmoke">冒 烟</el-button>
+            <el-button type="primary" @click="releaseApi" :disabled="!isCanRelease">发 布</el-button>
+            <el-button @click="backApi">取 消</el-button>
         </div>
 
 
@@ -119,6 +119,22 @@
                 <el-button @click="cancel">取 消</el-button>
             </div>
         </el-dialog>
+
+        
+        <el-dialog title="输入参数" :visible.sync="openParam" width="500px" append-to-body>
+            <el-form ref="queryForm" :model="varObj" label-width="auto" label-position="left" style="margin-left: 20px;" >
+                <el-form-item v-for="item in varObj" :key="item.name" :label="item.name" :prop="item.name">
+                    <el-input v-model="item.value" placeholder="请输入" />
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="executeSQL">确 定</el-button>
+                <el-button @click="cancelExecute">取 消</el-button>
+            </div>
+        </el-dialog>
+
+        
+
   
       
       
@@ -128,7 +144,7 @@
   <script>
   import {getOpenDataSourceList} from '@/api/metadata/dataSource'
   import {getFolderListByType} from '@/api/folder/folder'
-  import {executeSql, addSqlQuery, getSqlQueryDetail, updateSqlQuery} from '@/api/metadata/sqlQuery'
+  import {executeSql} from '@/api/metadata/sqlQuery'
   import {addApiInfo, updateApi, somkeTest, releaseApi, offlineApi, getApiInfo} from '@/api/apiManager/apiInfo'
   import sqlCode from '@/views/metadata/sqlQuery/sqlCode.vue'
   export default {
@@ -140,6 +156,7 @@
       data() {
           return {
               open: false,
+              openParam: false,
               activeName: 'executeResult',
               id: undefined,
               title: '',
@@ -152,8 +169,12 @@
               headList:[],
               resultData:[],
               paramList:[],
+              varObj:[],
               paramName: undefined,
               sqlLog: '',
+              showTab: false,
+              isCanSmoke: false,
+              isCanRelease: false,
               paramType:[
                 {label:'string', value: 'string'},
                 {label:'number', value: 'number'},
@@ -170,11 +191,13 @@
                 {label: 'get', value: 0},
                 {label: 'post', value: 1}
               ],
-            // 查询参数
+              // 查询参数
               queryParams: {
-              pageNo: 1,
-              pageSize: 10,
+                pageNo: 1,
+                pageSize: 10,
               },
+
+              // 表单规则
               rules:{
                   name: [
                       { required: true, message: "名称不能为空", trigger: "blur" }
@@ -204,9 +227,15 @@
           } else {
               this.title = '修改API'
               getApiInfo(this.id).then(response => {
+                
+                  this.isCanSmoke = true
+                  if (response.data.isPass && response.data.status !== 1) {
+                        this.isCanRelease = true
+                  }
                   this.form = response.data
                   this.sqlContent = response.data.sqlContent
                   this.paramList = response.data.param
+
               })
   
           }
@@ -242,13 +271,42 @@
           cancel() {
             this.paramName = ''
             this.open = false
-            
           },
+
+          backApi() {
+            this.$router.push({ path: "/api/info"});
+          },
+
+          cancelExecute() {
+            this.openParam = false
+            this.resetForm("queryForm");
+          },
+
   
           submitForm() {
               // 保存 根据是否有id区别是新增还是修改
               this.$refs["form"].validate(valid => {
                   if (valid) {
+                      this.paramList.forEach(param => {
+                        if (param.type === 'array<string>') {
+                            param.type = 'array'
+                            param.items = {
+                                type: 'string'
+                            }
+                        }
+                        if (param.type === 'array<number>') {
+                            param.type = 'array'
+                            param.items = {
+                                type: 'number'
+                            }
+                        }
+                        if (param.type === 'array<date>') {
+                            param.type = 'array'
+                            param.items = {
+                                type: 'date'
+                            }
+                        }
+                      })
                       const params = {
                           ...this.form,
                           sqlContent: this.sqlContent,
@@ -261,7 +319,9 @@
                                   type: "success",
                                   message: '新增成功'
                               }) 
-                              this.$router.push({ path: "/api/info"});
+                              this.id = response.data
+                              this.isCanSmoke = true;
+                            //   this.$router.push({ path: "/api/info"});
                           }) 
                       } else {
                           updateApi(params).then(response => {
@@ -269,13 +329,10 @@
                                   type: "success",
                                   message: '修改成功'
                               }) 
-                              this.$router.push({ path: "/api/info"});
+                              this.isCanRelease = false;
+                            //   this.$router.push({ path: "/api/info"});
                           })
-  
-  
                       }
-                      
-  
                   }
               })
   
@@ -289,6 +346,23 @@
                   }
               })
           },
+
+          execute() {
+            if (this.paramList.length > 0) {
+                this.varObj = []
+                this.paramList.forEach(p => {
+                    const v = {
+                        name: p.name,
+                        value: undefined,
+                        type: p.type,
+                        items: p.items
+                    }
+                    this.varObj.push(v)
+                })
+                this.openParam = true
+            }
+
+          },
   
           // 执行SQL
           executeSQL() {
@@ -296,6 +370,7 @@
                   ...this.form,
                   ...this.queryParams,
                   sqlContent: this.sqlContent,
+                  sqlParam: this.varObj
               }
               executeSql(params).then(response => {
                   const isSuccess = response.data.isSuccess
@@ -310,7 +385,7 @@
                       this.total = 0
                       this.activeName = 'executeLog'
                   }
-  
+                  this.showTab = true
               })
   
           },
@@ -335,6 +410,20 @@
             }
             this.paramList.push(param)
             this.paramName = ''
+          },
+
+          smokeTest() {
+            somkeTest(this.id).then(response => {
+                this.$message({
+                    type: "success",
+                    message: "冒烟测试通过"
+                })
+                this.isCanRelease = true
+            })
+          },
+
+          releaseApi(){
+
           }
       }
   
