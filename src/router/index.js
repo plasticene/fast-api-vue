@@ -130,13 +130,13 @@ export const constantRoutes = [
         path: 'info',
         name: 'ApiInfo',
         component: () => import('@/views/apiManager/info/index'),
-        meta: { title: 'API信息', icon: 'apiInfo' }
+        meta: { title: 'API列表', icon: 'apiInfo' }
       },
       {
         path: 'auth',
         name: 'ApiAuth',
         component: () => import('@/views/apiManager/auth/index'),
-        meta: { title: 'API列表', icon: 'apiAuth' }
+        meta: { title: 'API权限', icon: 'apiAuth' }
       },
       {
         path: 'visit',
