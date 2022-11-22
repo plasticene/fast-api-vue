@@ -6,7 +6,7 @@
 
 <script>
 export default {
-    name: 'ApiVisit'
+  name: 'ApiVisit'
 
 }
 </script>

@@ -3,25 +3,25 @@
 import request from '@/utils/request'
 
 export function getTableList(data) {
-    return request({
-        url: '/fds/dataSource/database/table',
-        method: 'get',
-        params: data
-    })
+  return request({
+    url: '/fds/dataSource/database/table',
+    method: 'get',
+    params: data
+  })
 }
 
 export function getTableStruct(data) {
-    return request({
-        url: '/fds/dataSource/table/struct',
-        method: 'get',
-        params: data
-    })
+  return request({
+    url: '/fds/dataSource/table/struct',
+    method: 'get',
+    params: data
+  })
 }
 
 export function getTableData(data) {
-    return request({
-        url: '/fds/dataSource/table/data',
-        method: 'get',
-        params: data,
-    })
+  return request({
+    url: '/fds/dataSource/table/data',
+    method: 'get',
+    params: data
+  })
 }

@@ -1,18 +1,23 @@
 import Vue from 'vue'
-
+// vue-codemirror这个好像也没有必要全局注册吧
 import VueCodeMirror from 'vue-codemirror'
 import 'codemirror/lib/codemirror.css'
 Vue.use(VueCodeMirror)
-
+// 下面这三个全局注册的组件好像都没有用到啊
 // 字典标签组件
-import DictTag from '@/components/DictTag'
+import DictTag from '@/components/dictTag'
 // 分页组件
 import Pagination from '@/components/Pagination'
 // 右侧工具栏
 import RightToolbar from '@/components/RightToolbar'
 
-import { parseTime, resetForm, addDateRange, addBeginAndEndTime, handleTree} from '@/utils/common'
-
+import {
+  parseTime,
+  resetForm,
+  addDateRange,
+  addBeginAndEndTime,
+  handleTree
+} from '@/utils/common'
 
 import 'normalize.css/normalize.css' // A modern alternative to CSS resets
 
@@ -62,5 +67,5 @@ new Vue({
   el: '#app',
   router,
   store,
-  render: h => h(App)
+  render: (h) => h(App)
 })
