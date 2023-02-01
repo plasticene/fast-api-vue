@@ -55,6 +55,7 @@ Vue.component('RightToolbar', RightToolbar)
 // 全局方法挂载
 Vue.prototype.resetForm = resetForm
 Vue.prototype.parseTime = parseTime
+Vue.prototype.handleTree = handleTree
 
 Vue.config.productionTip = false
 
