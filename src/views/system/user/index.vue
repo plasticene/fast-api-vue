@@ -46,6 +46,11 @@
           <el-switch v-model="scope.row.status" :active-value="0" :inactive-value="-1" @change="handleStatusChange(scope.row)"/>
         </template>
       </el-table-column>
+      <el-table-column  label="角色" align="center">
+          <template slot-scope="scope">
+            <span>{{ scope.row.roleList.map(e => e.name).join(',') }}</span>
+          </template>
+        </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" >
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -91,13 +96,22 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="手机号" prop="mobile">
+            <el-form-item v-if="form.id === undefined" label="手机号" prop="mobile">
               <el-input v-model="form.mobile" placeholder="请输入手机号" maxlength="11" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="姓名" prop="name">
               <el-input v-model="form.name" placeholder="请输入姓名" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item v-if="form.id !== undefined" label="状态" prop="status">
+              <el-radio-group v-model="form.status">
+                <el-radio v-for="dict in statusEnum" :key="parseInt(dict.value)" :label="parseInt(dict.value)">
+                  {{dict.label}}
+                </el-radio>
+              </el-radio-group>
             </el-form-item>
           </el-col>
         </el-row>
@@ -118,25 +132,24 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="角色">
-              <el-select v-model="form.postIds" multiple placeholder="请选择">
+              <el-select v-model="form.roleIds" multiple placeholder="请选择">
                 <el-option
-                    v-for="item in postOptions"
-                    :key="item.id"
+                    v-for="item in roleOptions"
+                    :key="parseInt(item.id)"
                     :label="item.name"
-                    :value="item.id"
+                    :value="parseInt(item.id)"
                 ></el-option>
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="状态" prop="status">
+            <el-form-item v-if="form.id === undefined" label="状态" prop="status">
               <el-radio-group v-model="form.status">
                 <el-radio v-for="dict in statusEnum" :key="parseInt(dict.value)" :label="parseInt(dict.value)">
                   {{dict.label}}
                 </el-radio>
               </el-radio-group>
             </el-form-item>
-
           </el-col>
         </el-row>
         <el-row>
@@ -153,12 +166,39 @@
       </div>
     </el-dialog>
 
+    <!-- 分配角色 -->
+    <el-dialog title="分配角色" :visible.sync="openRole" width="500px" append-to-body>
+      <el-form :model="form" label-width="80px">
+        <el-form-item label="用户名">
+          <el-input v-model="form.username" :disabled="true" />
+        </el-form-item>
+        <el-form-item label="姓名">
+          <el-input v-model="form.name" :disabled="true" />
+        </el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="form.roleIds" multiple placeholder="请选择">
+            <el-option
+                v-for="item in roleOptions"
+                :key="parseInt(item.id)"
+                :label="item.name"
+                :value="parseInt(item.id)"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitRole">确 定</el-button>
+        <el-button @click="cancelRole">取 消</el-button>
+      </div>
+    </el-dialog>
+
   </div>
   
 </template>
 
 <script>
-import {getUserList} from '@/api/system/user'
+import { getRoleList } from '@/api/system/role'
+import {getUserList, addUser, updateUser, deleteUser, assignUser} from '@/api/system/user'
 export default {
   name: 'User',
   data() {
@@ -177,6 +217,9 @@ export default {
       title: '',
       userList: [],
       total: 0,
+      roleOptions: [],
+      // 是否显示弹出层（角色权限）
+      openRole: false,
       // 搜索参数
       queryParams: {
         pageNo: 1,
@@ -246,8 +289,22 @@ export default {
       this.loading = true
       getUserList(this.queryParams).then(response => {
         this.userList = response.data.list
+        this.userList.forEach(user => {
+          const roleIds = user.roleList.map(e => e.id)
+          user.roleIds = roleIds
+        })
         this.total = response.data.total
         this.loading = false
+      })
+    },
+
+    getRoleList() {
+      const param = {
+        pageNo:1,
+        pageSize:2000
+      }
+      getRoleList(param).then(response => {
+        this.roleOptions = response.data.list
       })
     },
 
@@ -268,11 +325,127 @@ export default {
       this.resetForm("form");
     },
 
+    /** 搜索按钮操作 */
+    handleQuery() {
+        this.queryParams.pageNo = 1;
+        this.getList();
+    },
+    /** 重置按钮操作 */
+    resetQuery() {
+        this.resetForm("queryForm");
+        this.handleQuery();
+    },
+
     handleAdd() {
       this.reset()
       this.open = true
       this.title = '添加用户'
+      this.getRoleList()
+    },
+
+    /** 修改按钮操作 */
+    handleUpdate(row) {
+      this.reset();
+      this.form = row;
+      this.open = true;
+      this.title = "修改用户"
+      this.getRoleList()
+    },
+    // 取消按钮
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
+
+    submitForm() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          if (this.form.id !== undefined ) {
+            updateUser(this.form).then(response => {
+              this.$message({
+                type: "success",
+                message: '更新成功'
+                })
+              this.open = false
+              this.getList()
+            })
+          } else {
+            addUser(this.form).then(response => {
+              this.$message({
+                type: "success",
+                message: '新增成功'
+                })
+              this.open = false
+              this.getList()
+            })
+          }
+        }
+      })
+    },
+
+    handleDelete(row) {
+      this.$confirm("是否确认删除用户：" + row.username + "吗?", "提示", {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteUser(row.id).then(response => {
+          this.$message({
+            type: 'success',
+            message: '删除成功!'
+          });
+          // 重新获取列表的接口
+          this.getList()
+        })
+      })
+    },
+
+    handleRole(row) {
+      this.reset();
+      this.form = row;
+      this.openRole = true;
+      this.getRoleList()
+      
+    },
+
+    // 更多操作
+    handleCommand(command, index, row) {
+      switch (command) {
+        case 'handleUpdate':
+          this.handleUpdate(row);//修改客户信息
+          break;
+        case 'handleDelete':
+          this.handleDelete(row);//红号变更
+          break;
+        case 'handleResetPwd':
+          this.handleResetPwd(row);
+          break;
+        case 'handleRole':
+          this.handleRole(row);
+          break;
+        default:
+          break;
+      }
+    },
+
+    submitRole() {
+      const param = {
+        userId: this.form.id,
+        roleIds: this.form.roleIds
+      }
+      assignUser(param).then(response => {
+        this.$message({
+            type: 'success',
+            message: '分配角色成功!'
+          });
+        this.openRole = false
+      })
     }
+
+
+
+    
+
 
 
 
